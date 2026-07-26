@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as StandardsRouteImport } from './routes/standards'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as RoutesRouteImport } from './routes/routes'
+import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as MaterialsRouteImport } from './routes/materials'
 import { Route as MachinesRouteImport } from './routes/machines'
@@ -34,6 +35,11 @@ const SearchRoute = SearchRouteImport.update({
 const RoutesRoute = RoutesRouteImport.update({
   id: '/routes',
   path: '/routes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrdersRoute = OrdersRouteImport.update({
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/machines': typeof MachinesRoute
   '/materials': typeof MaterialsRoute
   '/orders': typeof OrdersRoute
+  '/reports': typeof ReportsRoute
   '/routes': typeof RoutesRoute
   '/search': typeof SearchRoute
   '/standards': typeof StandardsRoute
@@ -97,6 +104,7 @@ export interface FileRoutesByTo {
   '/machines': typeof MachinesRoute
   '/materials': typeof MaterialsRoute
   '/orders': typeof OrdersRoute
+  '/reports': typeof ReportsRoute
   '/routes': typeof RoutesRoute
   '/search': typeof SearchRoute
   '/standards': typeof StandardsRoute
@@ -111,6 +119,7 @@ export interface FileRoutesById {
   '/machines': typeof MachinesRoute
   '/materials': typeof MaterialsRoute
   '/orders': typeof OrdersRoute
+  '/reports': typeof ReportsRoute
   '/routes': typeof RoutesRoute
   '/search': typeof SearchRoute
   '/standards': typeof StandardsRoute
@@ -126,6 +135,7 @@ export interface FileRouteTypes {
     | '/machines'
     | '/materials'
     | '/orders'
+    | '/reports'
     | '/routes'
     | '/search'
     | '/standards'
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/machines'
     | '/materials'
     | '/orders'
+    | '/reports'
     | '/routes'
     | '/search'
     | '/standards'
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
     | '/machines'
     | '/materials'
     | '/orders'
+    | '/reports'
     | '/routes'
     | '/search'
     | '/standards'
@@ -166,6 +178,7 @@ export interface RootRouteChildren {
   MachinesRoute: typeof MachinesRoute
   MaterialsRoute: typeof MaterialsRoute
   OrdersRoute: typeof OrdersRoute
+  ReportsRoute: typeof ReportsRoute
   RoutesRoute: typeof RoutesRoute
   SearchRoute: typeof SearchRoute
   StandardsRoute: typeof StandardsRoute
@@ -194,6 +207,13 @@ declare module '@tanstack/react-router' {
       path: '/routes'
       fullPath: '/routes'
       preLoaderRoute: typeof RoutesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/orders': {
@@ -262,6 +282,7 @@ const rootRouteChildren: RootRouteChildren = {
   MachinesRoute: MachinesRoute,
   MaterialsRoute: MaterialsRoute,
   OrdersRoute: OrdersRoute,
+  ReportsRoute: ReportsRoute,
   RoutesRoute: RoutesRoute,
   SearchRoute: SearchRoute,
   StandardsRoute: StandardsRoute,
