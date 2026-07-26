@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StandardsRouteImport } from './routes/standards'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as RoutesRouteImport } from './routes/routes'
 import { Route as ReportsRouteImport } from './routes/reports'
@@ -26,6 +27,11 @@ import { Route as ProductsProductIdRouteImport } from './routes/products.$produc
 const StandardsRoute = StandardsRouteImport.update({
   id: '/standards',
   path: '/standards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SearchRoute = SearchRouteImport.update({
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRoute
   '/routes': typeof RoutesRoute
   '/search': typeof SearchRoute
+  '/settings': typeof SettingsRoute
   '/standards': typeof StandardsRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/products/': typeof ProductsIndexRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/reports': typeof ReportsRoute
   '/routes': typeof RoutesRoute
   '/search': typeof SearchRoute
+  '/settings': typeof SettingsRoute
   '/standards': typeof StandardsRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/products': typeof ProductsIndexRoute
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   '/reports': typeof ReportsRoute
   '/routes': typeof RoutesRoute
   '/search': typeof SearchRoute
+  '/settings': typeof SettingsRoute
   '/standards': typeof StandardsRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/products/': typeof ProductsIndexRoute
@@ -148,6 +157,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/routes'
     | '/search'
+    | '/settings'
     | '/standards'
     | '/products/$productId'
     | '/products/'
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/routes'
     | '/search'
+    | '/settings'
     | '/standards'
     | '/products/$productId'
     | '/products'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/routes'
     | '/search'
+    | '/settings'
     | '/standards'
     | '/products/$productId'
     | '/products/'
@@ -194,6 +206,7 @@ export interface RootRouteChildren {
   ReportsRoute: typeof ReportsRoute
   RoutesRoute: typeof RoutesRoute
   SearchRoute: typeof SearchRoute
+  SettingsRoute: typeof SettingsRoute
   StandardsRoute: typeof StandardsRoute
   ProductsProductIdRoute: typeof ProductsProductIdRoute
   ProductsIndexRoute: typeof ProductsIndexRoute
@@ -206,6 +219,13 @@ declare module '@tanstack/react-router' {
       path: '/standards'
       fullPath: '/standards'
       preLoaderRoute: typeof StandardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/search': {
@@ -306,6 +326,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReportsRoute: ReportsRoute,
   RoutesRoute: RoutesRoute,
   SearchRoute: SearchRoute,
+  SettingsRoute: SettingsRoute,
   StandardsRoute: StandardsRoute,
   ProductsProductIdRoute: ProductsProductIdRoute,
   ProductsIndexRoute: ProductsIndexRoute,
