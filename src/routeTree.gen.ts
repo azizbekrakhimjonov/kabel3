@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StandardsRouteImport } from './routes/standards'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as RoutesRouteImport } from './routes/routes'
@@ -27,6 +28,11 @@ import { Route as ProductsProductIdRouteImport } from './routes/products.$produc
 const StandardsRoute = StandardsRouteImport.update({
   id: '/standards',
   path: '/standards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/routes': typeof RoutesRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/standards': typeof StandardsRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/products/': typeof ProductsIndexRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/routes': typeof RoutesRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/standards': typeof StandardsRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/products': typeof ProductsIndexRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/routes': typeof RoutesRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/standards': typeof StandardsRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/products/': typeof ProductsIndexRoute
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
     | '/routes'
     | '/search'
     | '/settings'
+    | '/sitemap.xml'
     | '/standards'
     | '/products/$productId'
     | '/products/'
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
     | '/routes'
     | '/search'
     | '/settings'
+    | '/sitemap.xml'
     | '/standards'
     | '/products/$productId'
     | '/products'
@@ -190,6 +201,7 @@ export interface FileRouteTypes {
     | '/routes'
     | '/search'
     | '/settings'
+    | '/sitemap.xml'
     | '/standards'
     | '/products/$productId'
     | '/products/'
@@ -207,6 +219,7 @@ export interface RootRouteChildren {
   RoutesRoute: typeof RoutesRoute
   SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StandardsRoute: typeof StandardsRoute
   ProductsProductIdRoute: typeof ProductsProductIdRoute
   ProductsIndexRoute: typeof ProductsIndexRoute
@@ -219,6 +232,13 @@ declare module '@tanstack/react-router' {
       path: '/standards'
       fullPath: '/standards'
       preLoaderRoute: typeof StandardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -327,6 +347,7 @@ const rootRouteChildren: RootRouteChildren = {
   RoutesRoute: RoutesRoute,
   SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   StandardsRoute: StandardsRoute,
   ProductsProductIdRoute: ProductsProductIdRoute,
   ProductsIndexRoute: ProductsIndexRoute,
