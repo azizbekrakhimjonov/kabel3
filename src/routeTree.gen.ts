@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as RoutesRouteImport } from './routes/routes'
+import { Route as MaterialsRouteImport } from './routes/materials'
 import { Route as MachinesRouteImport } from './routes/machines'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
@@ -25,6 +26,11 @@ const SearchRoute = SearchRouteImport.update({
 const RoutesRoute = RoutesRouteImport.update({
   id: '/routes',
   path: '/routes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MaterialsRoute = MaterialsRouteImport.update({
+  id: '/materials',
+  path: '/materials',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MachinesRoute = MachinesRouteImport.update({
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/machines': typeof MachinesRoute
+  '/materials': typeof MaterialsRoute
   '/routes': typeof RoutesRoute
   '/search': typeof SearchRoute
   '/products/$productId': typeof ProductsProductIdRoute
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/machines': typeof MachinesRoute
+  '/materials': typeof MaterialsRoute
   '/routes': typeof RoutesRoute
   '/search': typeof SearchRoute
   '/products/$productId': typeof ProductsProductIdRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/machines': typeof MachinesRoute
+  '/materials': typeof MaterialsRoute
   '/routes': typeof RoutesRoute
   '/search': typeof SearchRoute
   '/products/$productId': typeof ProductsProductIdRoute
@@ -87,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/machines'
+    | '/materials'
     | '/routes'
     | '/search'
     | '/products/$productId'
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/machines'
+    | '/materials'
     | '/routes'
     | '/search'
     | '/products/$productId'
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/machines'
+    | '/materials'
     | '/routes'
     | '/search'
     | '/products/$productId'
@@ -115,6 +127,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
   MachinesRoute: typeof MachinesRoute
+  MaterialsRoute: typeof MaterialsRoute
   RoutesRoute: typeof RoutesRoute
   SearchRoute: typeof SearchRoute
   ProductsProductIdRoute: typeof ProductsProductIdRoute
@@ -135,6 +148,13 @@ declare module '@tanstack/react-router' {
       path: '/routes'
       fullPath: '/routes'
       preLoaderRoute: typeof RoutesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/materials': {
+      id: '/materials'
+      path: '/materials'
+      fullPath: '/materials'
+      preLoaderRoute: typeof MaterialsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/machines': {
@@ -179,6 +199,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   MachinesRoute: MachinesRoute,
+  MaterialsRoute: MaterialsRoute,
   RoutesRoute: RoutesRoute,
   SearchRoute: SearchRoute,
   ProductsProductIdRoute: ProductsProductIdRoute,
