@@ -19,7 +19,7 @@ import { formatNum, formatSum } from "@/lib/calc";
 import { Star, Search } from "lucide-react";
 import { useApp } from "@/lib/store";
 
-export const Route = createFileRoute("/products")({
+export const Route = createFileRoute("/products/")({
   head: () => ({
     meta: [
       { title: "Каталог продукции — CTMS кабельный завод" },
