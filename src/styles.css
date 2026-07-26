@@ -216,10 +216,23 @@
 }
 
 @media print {
-  .no-print {
+  .no-print,
+  [data-sidebar="sidebar"],
+  [data-slot="sidebar-container"] {
     display: none !important;
   }
   body {
     background: #fff;
+  }
+  .print-sheet {
+    box-shadow: none !important;
+    padding: 0 !important;
+    max-width: none !important;
+    --tw-ring-shadow: 0 0 #0000;
+    box-shadow: none;
+  }
+  @page {
+    size: A4;
+    margin: 14mm;
   }
 }
