@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as StandardsRouteImport } from './routes/standards'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as RoutesRouteImport } from './routes/routes'
 import { Route as MaterialsRouteImport } from './routes/materials'
@@ -18,6 +19,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductsIndexRouteImport } from './routes/products.index'
 import { Route as ProductsProductIdRouteImport } from './routes/products.$productId'
 
+const StandardsRoute = StandardsRouteImport.update({
+  id: '/standards',
+  path: '/standards',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/materials': typeof MaterialsRoute
   '/routes': typeof RoutesRoute
   '/search': typeof SearchRoute
+  '/standards': typeof StandardsRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/products/': typeof ProductsIndexRoute
 }
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/materials': typeof MaterialsRoute
   '/routes': typeof RoutesRoute
   '/search': typeof SearchRoute
+  '/standards': typeof StandardsRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/products': typeof ProductsIndexRoute
 }
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/materials': typeof MaterialsRoute
   '/routes': typeof RoutesRoute
   '/search': typeof SearchRoute
+  '/standards': typeof StandardsRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/products/': typeof ProductsIndexRoute
 }
@@ -99,6 +108,7 @@ export interface FileRouteTypes {
     | '/materials'
     | '/routes'
     | '/search'
+    | '/standards'
     | '/products/$productId'
     | '/products/'
   fileRoutesByTo: FileRoutesByTo
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/materials'
     | '/routes'
     | '/search'
+    | '/standards'
     | '/products/$productId'
     | '/products'
   id:
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/materials'
     | '/routes'
     | '/search'
+    | '/standards'
     | '/products/$productId'
     | '/products/'
   fileRoutesById: FileRoutesById
@@ -130,12 +142,20 @@ export interface RootRouteChildren {
   MaterialsRoute: typeof MaterialsRoute
   RoutesRoute: typeof RoutesRoute
   SearchRoute: typeof SearchRoute
+  StandardsRoute: typeof StandardsRoute
   ProductsProductIdRoute: typeof ProductsProductIdRoute
   ProductsIndexRoute: typeof ProductsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/standards': {
+      id: '/standards'
+      path: '/standards'
+      fullPath: '/standards'
+      preLoaderRoute: typeof StandardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/search': {
       id: '/search'
       path: '/search'
@@ -202,6 +222,7 @@ const rootRouteChildren: RootRouteChildren = {
   MaterialsRoute: MaterialsRoute,
   RoutesRoute: RoutesRoute,
   SearchRoute: SearchRoute,
+  StandardsRoute: StandardsRoute,
   ProductsProductIdRoute: ProductsProductIdRoute,
   ProductsIndexRoute: ProductsIndexRoute,
 }
