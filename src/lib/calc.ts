@@ -58,23 +58,6 @@ export interface OrderCalc {
 const SHIFT_HOURS = 8;
 const SHIFTS_PER_DAY = 2;
 
-/** Доля массы кабеля, набираемая после завершения перехода */
-const MASS_SHARE: Record<string, number> = {
-  "p-rod": 0,
-  "p-drawing": 0,
-  "p-annealing": 0,
-  "p-bunching": 0,
-  "p-insulation": 0,
-  "p-spark": 0,
-  "p-cabling": 0,
-  "p-binder": 0,
-  "p-screen": 0,
-  "p-armor": 0,
-  "p-sheath": 0,
-  "p-test": 0,
-  "p-packing": 0,
-};
-
 export function buildSteps(product: Product, lengthM: number): StepCalc[] {
   const route = ROUTES.find((r) => r.productId === product.id)!;
   return route.steps.map((s) => {
