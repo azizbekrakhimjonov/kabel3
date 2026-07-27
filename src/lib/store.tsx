@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Order, OrderItem } from "./types";
+import type { Order, OrderItem, StepProgress } from "./types";
 import { PRODUCTS } from "./data/products";
 
 export interface ImportedRow {
@@ -33,6 +33,12 @@ interface AppState {
   orders: Order[];
   addOrder: (order: Order) => void;
   updateOrderStatus: (id: string, status: Order["status"]) => void;
+  startProduction: (id: string) => void;
+  completeStep: (
+    id: string,
+    entry: Omit<StepProgress, "startedAt" | "finishedAt"> & { startedAt?: string },
+  ) => void;
+  undoStep: (id: string, itemId: string, stepIndex: number) => void;
   removeOrder: (id: string) => void;
   imported: ImportedRow[];
   setImported: (rows: ImportedRow[]) => void;
@@ -153,6 +159,52 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addOrder: (order: Order) => setOrders((o) => [order, ...o]),
       updateOrderStatus: (id, status) =>
         setOrders((o) => o.map((x) => (x.id === id ? { ...x, status } : x))),
+      startProduction: (id) =>
+        setOrders((o) =>
+          o.map((x) =>
+            x.id === id
+              ? {
+                  ...x,
+                  status: "в производстве",
+                  startedAt: x.startedAt ?? new Date().toISOString(),
+                  progress: x.progress ?? [],
+                }
+              : x,
+          ),
+        ),
+      completeStep: (id, entry) =>
+        setOrders((o) =>
+          o.map((x) => {
+            if (x.id !== id) return x;
+            const prev = x.progress ?? [];
+            const last = prev
+              .filter((p) => p.itemId === entry.itemId)
+              .sort((a, b) => a.stepIndex - b.stepIndex)
+              .at(-1);
+            const startedAt = entry.startedAt ?? last?.finishedAt ?? x.startedAt ?? new Date().toISOString();
+            const record: StepProgress = {
+              itemId: entry.itemId,
+              stepIndex: entry.stepIndex,
+              operator: entry.operator,
+              otk: entry.otk,
+              note: entry.note,
+              startedAt,
+              finishedAt: new Date().toISOString(),
+            };
+            return {
+              ...x,
+              progress: [...prev.filter((p) => !(p.itemId === entry.itemId && p.stepIndex === entry.stepIndex)), record],
+            };
+          }),
+        ),
+      undoStep: (id, itemId, stepIndex) =>
+        setOrders((o) =>
+          o.map((x) =>
+            x.id === id
+              ? { ...x, progress: (x.progress ?? []).filter((p) => !(p.itemId === itemId && p.stepIndex >= stepIndex)) }
+              : x,
+          ),
+        ),
       removeOrder: (id) => setOrders((o) => o.filter((x) => x.id !== id)),
       imported,
       setImported,
