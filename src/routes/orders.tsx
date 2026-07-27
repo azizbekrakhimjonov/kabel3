@@ -12,10 +12,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { PRODUCTS, CABLE_MODELS } from "@/lib/data/products";
-import { calcOrder, formatHours, formatNum, formatSum } from "@/lib/calc";
+import { buildSteps, calcOrder, formatHours, formatNum, formatSum } from "@/lib/calc";
+import { ProductionTracker } from "@/components/ProductionTracker";
 import { useApp } from "@/lib/store";
 import type { Order, OrderItem } from "@/lib/types";
-import { Plus, Trash2, ClipboardList, Timer, Weight, Coins, Printer, Layers } from "lucide-react";
+import { Plus, Trash2, ClipboardList, Timer, Weight, Coins, Printer, Layers, Play } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/orders")({
@@ -42,7 +43,7 @@ export const Route = createFileRoute("/orders")({
 
 function OrdersPage() {
   const { productId } = Route.useSearch();
-  const { orders, addOrder, updateOrderStatus, removeOrder } = useApp();
+  const { orders, addOrder, updateOrderStatus, startProduction, removeOrder } = useApp();
 
   const [customer, setCustomer] = useState("");
   const [manager, setManager] = useState("Р. Каримов");
@@ -60,8 +61,17 @@ function OrdersPage() {
   const [model, setModel] = useState(productId ? PRODUCTS.find((p) => p.id === productId)!.model : "");
   const [size, setSize] = useState("");
   const [length, setLength] = useState(1000);
+  const [stage, setStage] = useState("full");
 
   const sizes = useMemo(() => PRODUCTS.filter((p) => p.model === model).map((p) => p.size), [model]);
+  const selectedProduct = useMemo(
+    () => PRODUCTS.find((p) => p.model === model && p.size === size),
+    [model, size],
+  );
+  const stageOptions = useMemo(
+    () => (selectedProduct ? buildSteps(selectedProduct, 1000) : []),
+    [selectedProduct],
+  );
   const calc = calcOrder({ items });
 
   const addItem = () => {
@@ -74,8 +84,22 @@ function OrdersPage() {
       toast.error("Укажите метраж больше нуля");
       return;
     }
-    setItems((prev) => [...prev, { id: `it-${Date.now()}`, productId: product.id, lengthM: length, drums: 0 }]);
-    toast.success(`${product.name} — ${formatNum(length)} м добавлено в заказ`);
+    const total = buildSteps(product, 1000).length;
+    const stageTo = stage === "full" ? total : Number(stage);
+    setItems((prev) => [
+      ...prev,
+      {
+        id: `it-${Date.now()}`,
+        productId: product.id,
+        lengthM: length,
+        drums: 0,
+        stageTo,
+        readiness: stageTo < total ? "полуфабрикат" : "готовая",
+      },
+    ]);
+    toast.success(
+      `${product.name} — ${formatNum(length)} м добавлено (${stageTo < total ? "полуфабрикат" : "готовая продукция"})`,
+    );
   };
 
   const saveOrder = () => {
@@ -160,7 +184,7 @@ function OrdersPage() {
                   <p className="mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-accent">
                     <Plus className="size-4" /> Добавить позицию
                   </p>
-                  <div className="grid gap-3 md:grid-cols-[1.3fr_1fr_1fr_auto] md:items-end">
+                  <div className="grid gap-3 md:grid-cols-[1.3fr_1fr_1fr_1.4fr_auto] md:items-end">
                     <div className="space-y-2">
                       <Label>Марка кабеля</Label>
                       <Select
@@ -207,6 +231,22 @@ function OrdersPage() {
                         onChange={(e) => setLength(Number(e.target.value))}
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label>Степень готовности</Label>
+                      <Select value={stage} onValueChange={setStage} disabled={!selectedProduct}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Готовая продукция" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-72">
+                          <SelectItem value="full">Готовая продукция (весь маршрут)</SelectItem>
+                          {stageOptions.slice(0, -1).map((s2, i) => (
+                            <SelectItem key={s2.processId} value={String(i + 1)}>
+                              Полуфабрикат до «{s2.processName}»
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <Button type="button" onClick={addItem}>
                       <Plus className="size-4" /> Добавить
                     </Button>
@@ -218,6 +258,7 @@ function OrdersPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Позиция</TableHead>
+                        <TableHead>Готовность</TableHead>
                         <TableHead className="text-right">Метраж, м</TableHead>
                         <TableHead className="text-right">Масса, кг</TableHead>
                         <TableHead className="text-right">Барабаны</TableHead>
@@ -232,6 +273,17 @@ function OrdersPage() {
                           <TableCell>
                             <p className="font-medium">{it.product.name}</p>
                             <p className="font-mono text-[11px] text-muted-foreground">{it.product.article}</p>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={it.isSemi ? "border-warning/40 bg-warning/10 text-warning" : ""}
+                            >
+                              {it.isSemi ? `п/ф до «${it.stageName}»` : "готовая"}
+                            </Badge>
+                            <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+                              {it.stageTo}/{it.allSteps.length} переходов
+                            </p>
                           </TableCell>
                           <TableCell className="text-right tabular-nums">{formatNum(it.lengthM)}</TableCell>
                           <TableCell className="text-right tabular-nums">{formatNum(it.weightKg)}</TableCell>
@@ -255,7 +307,7 @@ function OrdersPage() {
                       ))}
                       {calc.items.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
+                          <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
                             Позиции ещё не добавлены
                           </TableCell>
                         </TableRow>
@@ -411,7 +463,12 @@ function OrdersPage() {
                     <ul className="mt-3 space-y-1 border-t border-border pt-3 text-sm">
                       {c.items.map((it) => (
                         <li key={it.item.id} className="flex justify-between gap-2">
-                          <span className="truncate">{it.product.name}</span>
+                          <span className="truncate">
+                            {it.product.name}
+                            {it.isSemi && (
+                              <span className="ml-1 text-warning">· п/ф до «{it.stageName}»</span>
+                            )}
+                          </span>
                           <span className="shrink-0 font-mono text-muted-foreground">
                             {formatNum(it.lengthM)} м
                           </span>
@@ -426,8 +483,14 @@ function OrdersPage() {
                     {o.comment && <p className="mt-3 text-xs text-muted-foreground">{o.comment}</p>}
                     <div className="mt-4 flex flex-wrap gap-2">
                       {o.status !== "в производстве" && (
-                        <Button size="sm" onClick={() => updateOrderStatus(o.id, "в производстве")}>
-                          Запустить в производство
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            startProduction(o.id);
+                            toast.success(`Заказ ${o.number} запущен — калькуляция факта началась`);
+                          }}
+                        >
+                          <Play className="size-4" /> Запустить в производство
                         </Button>
                       )}
                       {o.status !== "выполнен" && (
@@ -439,6 +502,7 @@ function OrdersPage() {
                         <Trash2 className="size-4 text-destructive" />
                       </Button>
                     </div>
+                    {o.status === "в производстве" && <ProductionTracker order={o} />}
                   </article>
                 );
               })}

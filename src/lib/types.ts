@@ -102,11 +102,26 @@ export interface RouteStep {
   note: string;
 }
 
+export type Readiness = "готовая" | "полуфабрикат";
+
 export interface OrderItem {
   id: string;
   productId: string;
   lengthM: number;
   drums: number;
+  /** Количество технологических переходов, включённых в заказ (undefined — полный маршрут) */
+  stageTo?: number;
+  readiness?: Readiness;
+}
+
+export interface StepProgress {
+  itemId: string;
+  stepIndex: number;
+  startedAt: string;
+  finishedAt: string;
+  operator: string;
+  otk: string;
+  note?: string;
 }
 
 export interface Order {
@@ -120,4 +135,8 @@ export interface Order {
   status: "черновик" | "в производстве" | "выполнен";
   comment: string;
   items: OrderItem[];
+  /** Момент нажатия «Запустить в производство» — с него идёт калькуляция факта */
+  startedAt?: string;
+  progress?: StepProgress[];
 }
+

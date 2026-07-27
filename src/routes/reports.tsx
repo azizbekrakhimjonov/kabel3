@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PRODUCTS } from "@/lib/data/products";
-import { calcItem, formatHours, formatNum, formatSum } from "@/lib/calc";
+import { buildSteps, calcItem, formatHours, formatNum, formatSum } from "@/lib/calc";
 import { Printer } from "lucide-react";
 
 export const Route = createFileRoute("/reports")({
@@ -34,10 +34,23 @@ function ReportsPage() {
   const [lengthM, setLengthM] = useState(1000);
   const [orderNumber, setOrderNumber] = useState("ЗК-2024/0147");
   const [customer, setCustomer] = useState('АО "Узбекэнерго"');
+  const [stage, setStage] = useState("full");
+
+  const stageOptions = useMemo(() => {
+    const p = PRODUCTS.find((x) => x.id === id)!;
+    return buildSteps(p, 1000);
+  }, [id]);
 
   const calc = useMemo(
-    () => calcItem({ id: "rep", productId: id, lengthM, drums: 0 }),
-    [id, lengthM],
+    () =>
+      calcItem({
+        id: "rep",
+        productId: id,
+        lengthM,
+        drums: 0,
+        stageTo: stage === "full" ? undefined : Number(stage),
+      }),
+    [id, lengthM, stage],
   );
   const product = calc?.product;
 
@@ -55,7 +68,7 @@ function ReportsPage() {
         <div className="no-print panel mb-6 grid gap-4 p-5 md:grid-cols-4">
           <div className="space-y-2 md:col-span-2">
             <Label>Продукция</Label>
-            <Select value={id} onValueChange={setId}>
+            <Select value={id} onValueChange={(v) => { setId(v); setStage("full"); }}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -76,7 +89,23 @@ function ReportsPage() {
             <Label htmlFor="no">Номер заказа</Label>
             <Input id="no" value={orderNumber} onChange={(e) => setOrderNumber(e.target.value)} />
           </div>
-          <div className="space-y-2 md:col-span-4">
+          <div className="space-y-2 md:col-span-2">
+            <Label>Степень готовности</Label>
+            <Select value={stage} onValueChange={setStage}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="max-h-72">
+                <SelectItem value="full">Готовая продукция (весь маршрут)</SelectItem>
+                {stageOptions.slice(0, -1).map((s, i) => (
+                  <SelectItem key={s.processId} value={String(i + 1)}>
+                    Полуфабрикат до «{s.processName}»
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2 md:col-span-2">
             <Label htmlFor="cu">Заказчик</Label>
             <Input id="cu" value={customer} onChange={(e) => setCustomer(e.target.value)} />
           </div>
@@ -113,6 +142,14 @@ function ReportsPage() {
               <Field k="Тара" v={`${calc.drums} барабан(ов) по ${calc.drumLength} м`} />
               <Field k="Норма времени" v={formatHours(calc.productionHours)} />
               <Field k="Стоимость партии" v={formatSum(calc.price)} />
+              <Field
+                k="Вид выпуска"
+                v={
+                  calc.isSemi
+                    ? `Полуфабрикат — до операции «${calc.stageName}» (${calc.stageTo} из ${calc.allSteps.length})`
+                    : "Готовая продукция (полный маршрут)"
+                }
+              />
             </section>
 
             <table className="mt-5 w-full border-collapse text-[11px]">
@@ -125,7 +162,8 @@ function ReportsPage() {
                   <th className="border border-border p-1.5 text-right">Скорость, м/ч</th>
                   <th className="border border-border p-1.5 text-right">Т наладки</th>
                   <th className="border border-border p-1.5 text-right">Т операции</th>
-                  <th className="border border-border p-1.5 text-left">Исполнитель</th>
+                  <th className="border border-border p-1.5 text-left">Оператор</th>
+                  <th className="border border-border p-1.5 text-left">ОТК</th>
                 </tr>
               </thead>
               <tbody>
@@ -144,7 +182,8 @@ function ReportsPage() {
                     <td className="border border-border p-1.5 text-right tabular-nums">
                       {formatHours(s.totalHours)}
                     </td>
-                    <td className="border border-border p-1.5"></td>
+                    <td className="border border-border p-1.5 h-7"></td>
+                    <td className="border border-border p-1.5 h-7"></td>
                   </tr>
                 ))}
                 <tr className="bg-muted font-semibold">
@@ -154,6 +193,7 @@ function ReportsPage() {
                   <td className="border border-border p-1.5 text-right tabular-nums">
                     {formatHours(calc.productionHours)}
                   </td>
+                  <td className="border border-border p-1.5"></td>
                   <td className="border border-border p-1.5"></td>
                 </tr>
               </tbody>
