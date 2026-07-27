@@ -25,7 +25,13 @@ export interface ItemCalc {
   screenKg: number;
   armorKg: number;
   steps: StepCalc[];
+  allSteps: StepCalc[];
+  stageTo: number;
+  isSemi: boolean;
+  stageName: string;
+  readiness: string;
   productionHours: number;
+  fullHours: number;
   drums: number;
   drumLength: number;
   price: number;
@@ -52,16 +58,29 @@ export interface OrderCalc {
 const SHIFT_HOURS = 8;
 const SHIFTS_PER_DAY = 2;
 
-export function calcItem(item: OrderItem): ItemCalc | null {
-  const product = PRODUCTS.find((p) => p.id === item.productId);
-  if (!product) return null;
-  const route = ROUTES.find((r) => r.productId === product.id)!;
-  const km = item.lengthM / 1000;
+/** Доля массы кабеля, набираемая после завершения перехода */
+const MASS_SHARE: Record<string, number> = {
+  "p-rod": 0,
+  "p-drawing": 0,
+  "p-annealing": 0,
+  "p-bunching": 0,
+  "p-insulation": 0,
+  "p-spark": 0,
+  "p-cabling": 0,
+  "p-binder": 0,
+  "p-screen": 0,
+  "p-armor": 0,
+  "p-sheath": 0,
+  "p-test": 0,
+  "p-packing": 0,
+};
 
-  const steps: StepCalc[] = route.steps.map((s) => {
+export function buildSteps(product: Product, lengthM: number): StepCalc[] {
+  const route = ROUTES.find((r) => r.productId === product.id)!;
+  return route.steps.map((s) => {
     const proc = PROCESSES.find((p) => p.id === s.processId)!;
     const machine = MACHINES.find((m) => m.id === s.machineId)!;
-    const runHours = item.lengthM / s.ratePerHour;
+    const runHours = lengthM / s.ratePerHour;
     return {
       processId: s.processId,
       processName: proc.name,
@@ -75,14 +94,32 @@ export function calcItem(item: OrderItem): ItemCalc | null {
       note: s.note,
     };
   });
+}
+
+export function calcItem(item: OrderItem): ItemCalc | null {
+  const product = PRODUCTS.find((p) => p.id === item.productId);
+  if (!product) return null;
+  const km = item.lengthM / 1000;
+
+  const allSteps = buildSteps(product, item.lengthM);
+  const stageTo = Math.min(Math.max(item.stageTo ?? allSteps.length, 1), allSteps.length);
+  const steps = allSteps.slice(0, stageTo);
+  const isSemi = stageTo < allSteps.length;
+  const done = new Set(steps.map((s) => s.processId));
 
   const productionHours = Math.round(steps.reduce((a, s) => a + s.totalHours, 0) * 10) / 10;
+  const fullHours = Math.round(allSteps.reduce((a, s) => a + s.totalHours, 0) * 10) / 10;
   const drumLength = product.outerDiameter > 25 ? 500 : product.outerDiameter > 15 ? 1000 : 2000;
   const drums = item.drums > 0 ? item.drums : Math.max(1, Math.ceil(item.lengthM / drumLength));
-  const copperKg = Math.round(product.copperKgPerKm * km * 10) / 10;
-  const pvcKg = Math.round(product.pvcKgPerKm * km * 10) / 10;
-  const screenKg = Math.round(product.screenKgPerKm * km * 10) / 10;
-  const armorKg = Math.round(product.armorKgPerKm * km * 10) / 10;
+
+  // Материалы списываются только по фактически пройденным переходам
+  const r = (v: number) => Math.round(v * 10) / 10;
+  const copperKg = done.has("p-drawing") ? r(product.copperKgPerKm * km) : 0;
+  const pvcShare = (done.has("p-insulation") ? 0.55 : 0) + (done.has("p-sheath") ? 0.45 : 0);
+  const pvcKg = r(product.pvcKgPerKm * km * pvcShare);
+  const screenKg = done.has("p-screen") ? r(product.screenKgPerKm * km) : 0;
+  const armorKg = done.has("p-armor") ? r(product.armorKgPerKm * km) : 0;
+
   const materialCost = Math.round(
     copperKg * (product.conductorMaterial === "Медь" ? 118000 : 34000) +
       pvcKg * 24000 +
@@ -90,23 +127,42 @@ export function calcItem(item: OrderItem): ItemCalc | null {
       armorKg * 12400,
   );
 
+  const weightKg = Math.round(copperKg + pvcKg + screenKg + armorKg);
+  const fullWeight = Math.round(product.weightKgPerKm * km);
+
+  // Цена полуфабриката: доля материалов и доля трудоёмкости
+  const ratio = isSemi
+    ? Math.min(
+        1,
+        0.6 * (weightKg / Math.max(1, fullWeight)) + 0.4 * (productionHours / Math.max(0.1, fullHours)),
+      )
+    : 1;
+
+  const lastProc = steps[steps.length - 1];
   return {
     item,
     product,
     lengthM: item.lengthM,
-    weightKg: Math.round(product.weightKgPerKm * km),
+    weightKg: isSemi ? weightKg : fullWeight,
     copperKg,
     pvcKg,
     screenKg,
     armorKg,
     steps,
+    allSteps,
+    stageTo,
+    isSemi,
+    stageName: lastProc ? lastProc.processName : "—",
+    readiness: isSemi ? "полуфабрикат" : "готовая продукция",
     productionHours,
+    fullHours,
     drums,
     drumLength,
-    price: Math.round(product.pricePerM * item.lengthM),
+    price: Math.round(product.pricePerM * item.lengthM * ratio),
     materialCost,
   };
 }
+
 
 export function calcOrder(order: Pick<Order, "items">): OrderCalc {
   const items = order.items.map(calcItem).filter(Boolean) as ItemCalc[];
