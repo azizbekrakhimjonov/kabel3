@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Order, OrderItem, StepProgress } from "./types";
+import type { Assignment, Order, OrderItem, StepProgress } from "./types";
 import { PRODUCTS } from "./data/products";
 
 export interface ImportedRow {
@@ -39,6 +39,8 @@ interface AppState {
     entry: Omit<StepProgress, "startedAt" | "finishedAt"> & { startedAt?: string },
   ) => void;
   undoStep: (id: string, itemId: string, stepIndex: number) => void;
+  setAssignment: (orderId: string, itemId: string, patch: Partial<Assignment>) => void;
+
   removeOrder: (id: string) => void;
   imported: ImportedRow[];
   setImported: (rows: ImportedRow[]) => void;
@@ -205,6 +207,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
               : x,
           ),
         ),
+      setAssignment: (orderId, itemId, patch) =>
+        setOrders((o) =>
+          o.map((x) =>
+            x.id === orderId
+              ? {
+                  ...x,
+                  assignments: {
+                    ...(x.assignments ?? {}),
+                    [itemId]: {
+                      masterShift: "",
+                      sectionChief: "",
+                      operator: "",
+                      ...(x.assignments?.[itemId] ?? {}),
+                      ...patch,
+                    },
+                  },
+                }
+              : x,
+          ),
+        ),
+
       removeOrder: (id) => setOrders((o) => o.filter((x) => x.id !== id)),
       imported,
       setImported,

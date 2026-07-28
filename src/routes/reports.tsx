@@ -8,7 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PRODUCTS } from "@/lib/data/products";
 import { buildSteps, calcItem, formatHours, formatNum, formatSum } from "@/lib/calc";
+import { useApp } from "@/lib/store";
 import { Printer } from "lucide-react";
+
 
 export const Route = createFileRoute("/reports")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -30,11 +32,41 @@ export const Route = createFileRoute("/reports")({
 
 function ReportsPage() {
   const { productId } = Route.useSearch();
+  const { orders, setAssignment } = useApp();
   const [id, setId] = useState(productId || PRODUCTS[0].id);
   const [lengthM, setLengthM] = useState(1000);
   const [orderNumber, setOrderNumber] = useState("ЗК-2024/0147");
   const [customer, setCustomer] = useState('АО "Узбекэнерго"');
   const [stage, setStage] = useState("full");
+  const [source, setSource] = useState("manual");
+
+  const orderOptions = useMemo(
+    () =>
+      orders.flatMap((o) =>
+        o.items.map((it) => ({
+          key: `${o.id}|${it.id}`,
+          order: o,
+          item: it,
+          label: `${o.number} · ${PRODUCTS.find((p) => p.id === it.productId)?.name ?? it.productId}`,
+        })),
+      ),
+    [orders],
+  );
+  const picked = orderOptions.find((o) => o.key === source);
+
+  const applyOrder = (key: string) => {
+    setSource(key);
+    const opt = orderOptions.find((o) => o.key === key);
+    if (!opt) return;
+    setId(opt.item.productId);
+    setLengthM(opt.item.lengthM);
+    setOrderNumber(opt.order.number);
+    setCustomer(opt.order.customer);
+    setStage(opt.item.stageTo ? String(opt.item.stageTo) : "full");
+  };
+
+  const assignment = picked?.order.assignments?.[picked.item.id];
+  const progress = picked?.order.progress ?? [];
 
   const stageOptions = useMemo(() => {
     const p = PRODUCTS.find((x) => x.id === id)!;
@@ -54,6 +86,7 @@ function ReportsPage() {
   );
   const product = calc?.product;
 
+
   return (
     <Protected>
       <AppShell
@@ -66,7 +99,44 @@ function ReportsPage() {
         }
       >
         <div className="no-print panel mb-6 grid gap-4 p-5 md:grid-cols-4">
+          <div className="space-y-2 md:col-span-4">
+            <Label>Источник данных</Label>
+            <Select value={source} onValueChange={(v) => (v === "manual" ? setSource("manual") : applyOrder(v))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="max-h-72">
+                <SelectItem value="manual">Произвольная карта (без заказа)</SelectItem>
+                {orderOptions.map((o) => (
+                  <SelectItem key={o.key} value={o.key}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {picked && (
+            <div className="grid gap-4 md:col-span-4 md:grid-cols-3">
+              {(
+                [
+                  ["masterShift", "Мастер смены"],
+                  ["sectionChief", "Начальник участка"],
+                  ["operator", "Оператор"],
+                ] as const
+              ).map(([field, label]) => (
+                <div key={field} className="space-y-2">
+                  <Label>{label}</Label>
+                  <Input
+                    value={assignment?.[field] ?? ""}
+                    placeholder="Ф.И.О."
+                    onChange={(e) => setAssignment(picked.order.id, picked.item.id, { [field]: e.target.value })}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
           <div className="space-y-2 md:col-span-2">
+
             <Label>Продукция</Label>
             <Select value={id} onValueChange={(v) => { setId(v); setStage("full"); }}>
               <SelectTrigger>
@@ -150,6 +220,9 @@ function ReportsPage() {
                     : "Готовая продукция (полный маршрут)"
                 }
               />
+              <Field k="Мастер смены" v={assignment?.masterShift || "—"} />
+              <Field k="Начальник участка" v={assignment?.sectionChief || "—"} />
+              <Field k="Закреплённый оператор" v={assignment?.operator || "—"} />
             </section>
 
             <table className="mt-5 w-full border-collapse text-[11px]">
@@ -167,7 +240,9 @@ function ReportsPage() {
                 </tr>
               </thead>
               <tbody>
-                {calc.steps.map((s, i) => (
+                {calc.steps.map((s, i) => {
+                  const rec = progress.find((p) => p.itemId === picked?.item.id && p.stepIndex === i);
+                  return (
                   <tr key={s.processId}>
                     <td className="border border-border p-1.5 font-mono">{String(i + 1).padStart(2, "0")}</td>
                     <td className="border border-border p-1.5 font-medium">{s.processName}</td>
@@ -182,10 +257,12 @@ function ReportsPage() {
                     <td className="border border-border p-1.5 text-right tabular-nums">
                       {formatHours(s.totalHours)}
                     </td>
-                    <td className="border border-border p-1.5 h-7"></td>
-                    <td className="border border-border p-1.5 h-7"></td>
+                    <td className="border border-border p-1.5 h-7">{rec?.operator ?? ""}</td>
+                    <td className="border border-border p-1.5 h-7">{rec?.otk ?? ""}</td>
                   </tr>
-                ))}
+                  );
+                })}
+
                 <tr className="bg-muted font-semibold">
                   <td className="border border-border p-1.5" colSpan={6}>
                     Итого норма времени на партию
@@ -213,7 +290,8 @@ function ReportsPage() {
             </section>
 
             <footer className="mt-8 grid grid-cols-3 gap-6 text-[11px]">
-              {["Технолог", "Начальник цеха", "ОТК"].map((r) => (
+              {["Технолог", "Начальник участка", "Мастер смены", "Оператор", "Начальник цеха", "ОТК"].map((r) => (
+
                 <div key={r}>
                   <div className="h-8 border-b border-foreground" />
                   <p className="mt-1 text-muted-foreground">{r}</p>
