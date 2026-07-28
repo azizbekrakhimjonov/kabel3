@@ -15,6 +15,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as RoutesRouteImport } from './routes/routes'
 import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as PlanRouteImport } from './routes/plan'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as MaterialsRouteImport } from './routes/materials'
 import { Route as MachinesRouteImport } from './routes/machines'
@@ -53,6 +54,11 @@ const RoutesRoute = RoutesRouteImport.update({
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlanRoute = PlanRouteImport.update({
+  id: '/plan',
+  path: '/plan',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrdersRoute = OrdersRouteImport.update({
@@ -109,6 +115,7 @@ export interface FileRoutesByFullPath {
   '/machines': typeof MachinesRoute
   '/materials': typeof MaterialsRoute
   '/orders': typeof OrdersRoute
+  '/plan': typeof PlanRoute
   '/reports': typeof ReportsRoute
   '/routes': typeof RoutesRoute
   '/search': typeof SearchRoute
@@ -126,6 +133,7 @@ export interface FileRoutesByTo {
   '/machines': typeof MachinesRoute
   '/materials': typeof MaterialsRoute
   '/orders': typeof OrdersRoute
+  '/plan': typeof PlanRoute
   '/reports': typeof ReportsRoute
   '/routes': typeof RoutesRoute
   '/search': typeof SearchRoute
@@ -144,6 +152,7 @@ export interface FileRoutesById {
   '/machines': typeof MachinesRoute
   '/materials': typeof MaterialsRoute
   '/orders': typeof OrdersRoute
+  '/plan': typeof PlanRoute
   '/reports': typeof ReportsRoute
   '/routes': typeof RoutesRoute
   '/search': typeof SearchRoute
@@ -163,6 +172,7 @@ export interface FileRouteTypes {
     | '/machines'
     | '/materials'
     | '/orders'
+    | '/plan'
     | '/reports'
     | '/routes'
     | '/search'
@@ -180,6 +190,7 @@ export interface FileRouteTypes {
     | '/machines'
     | '/materials'
     | '/orders'
+    | '/plan'
     | '/reports'
     | '/routes'
     | '/search'
@@ -197,6 +208,7 @@ export interface FileRouteTypes {
     | '/machines'
     | '/materials'
     | '/orders'
+    | '/plan'
     | '/reports'
     | '/routes'
     | '/search'
@@ -215,6 +227,7 @@ export interface RootRouteChildren {
   MachinesRoute: typeof MachinesRoute
   MaterialsRoute: typeof MaterialsRoute
   OrdersRoute: typeof OrdersRoute
+  PlanRoute: typeof PlanRoute
   ReportsRoute: typeof ReportsRoute
   RoutesRoute: typeof RoutesRoute
   SearchRoute: typeof SearchRoute
@@ -267,6 +280,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plan': {
+      id: '/plan'
+      path: '/plan'
+      fullPath: '/plan'
+      preLoaderRoute: typeof PlanRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/orders': {
@@ -343,6 +363,7 @@ const rootRouteChildren: RootRouteChildren = {
   MachinesRoute: MachinesRoute,
   MaterialsRoute: MaterialsRoute,
   OrdersRoute: OrdersRoute,
+  PlanRoute: PlanRoute,
   ReportsRoute: ReportsRoute,
   RoutesRoute: RoutesRoute,
   SearchRoute: SearchRoute,

@@ -40,6 +40,8 @@ const NAV = [
   { title: "Поиск продукции", url: "/search", icon: Search },
   { title: "Продукция", url: "/products", icon: Package },
   { title: "Заказы", url: "/orders", icon: ClipboardList },
+  { title: "План-задание", url: "/plan", icon: Table2 },
+
   { title: "Маршруты", url: "/routes", icon: GitBranch },
   { title: "Оборудование", url: "/machines", icon: Cog },
   { title: "Материалы", url: "/materials", icon: Boxes },
