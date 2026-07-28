@@ -30,11 +30,41 @@ export const Route = createFileRoute("/reports")({
 
 function ReportsPage() {
   const { productId } = Route.useSearch();
+  const { orders, setAssignment } = useApp();
   const [id, setId] = useState(productId || PRODUCTS[0].id);
   const [lengthM, setLengthM] = useState(1000);
   const [orderNumber, setOrderNumber] = useState("ЗК-2024/0147");
   const [customer, setCustomer] = useState('АО "Узбекэнерго"');
   const [stage, setStage] = useState("full");
+  const [source, setSource] = useState("manual");
+
+  const orderOptions = useMemo(
+    () =>
+      orders.flatMap((o) =>
+        o.items.map((it) => ({
+          key: `${o.id}|${it.id}`,
+          order: o,
+          item: it,
+          label: `${o.number} · ${PRODUCTS.find((p) => p.id === it.productId)?.name ?? it.productId}`,
+        })),
+      ),
+    [orders],
+  );
+  const picked = orderOptions.find((o) => o.key === source);
+
+  const applyOrder = (key: string) => {
+    setSource(key);
+    const opt = orderOptions.find((o) => o.key === key);
+    if (!opt) return;
+    setId(opt.item.productId);
+    setLengthM(opt.item.lengthM);
+    setOrderNumber(opt.order.number);
+    setCustomer(opt.order.customer);
+    setStage(opt.item.stageTo ? String(opt.item.stageTo) : "full");
+  };
+
+  const assignment = picked?.order.assignments?.[picked.item.id];
+  const progress = picked?.order.progress ?? [];
 
   const stageOptions = useMemo(() => {
     const p = PRODUCTS.find((x) => x.id === id)!;
@@ -53,6 +83,7 @@ function ReportsPage() {
     [id, lengthM, stage],
   );
   const product = calc?.product;
+
 
   return (
     <Protected>
