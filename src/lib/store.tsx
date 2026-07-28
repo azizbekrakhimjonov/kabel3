@@ -39,6 +39,8 @@ interface AppState {
     entry: Omit<StepProgress, "startedAt" | "finishedAt"> & { startedAt?: string },
   ) => void;
   undoStep: (id: string, itemId: string, stepIndex: number) => void;
+  setAssignment: (orderId: string, itemId: string, patch: Partial<Assignment>) => void;
+
   removeOrder: (id: string) => void;
   imported: ImportedRow[];
   setImported: (rows: ImportedRow[]) => void;
