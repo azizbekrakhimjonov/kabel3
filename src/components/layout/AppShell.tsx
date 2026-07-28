@@ -17,6 +17,8 @@ import {
   Sun,
   LogOut,
   Factory,
+  Table2,
+
 } from "lucide-react";
 import {
   Sidebar,
