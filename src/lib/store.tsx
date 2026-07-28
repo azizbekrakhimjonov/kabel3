@@ -207,6 +207,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
               : x,
           ),
         ),
+      setAssignment: (orderId, itemId, patch) =>
+        setOrders((o) =>
+          o.map((x) =>
+            x.id === orderId
+              ? {
+                  ...x,
+                  assignments: {
+                    ...(x.assignments ?? {}),
+                    [itemId]: {
+                      masterShift: "",
+                      sectionChief: "",
+                      operator: "",
+                      ...(x.assignments?.[itemId] ?? {}),
+                      ...patch,
+                    },
+                  },
+                }
+              : x,
+          ),
+        ),
+
       removeOrder: (id) => setOrders((o) => o.filter((x) => x.id !== id)),
       imported,
       setImported,
