@@ -124,6 +124,15 @@ export interface StepProgress {
   note?: string;
 }
 
+export interface Assignment {
+  /** Мастер смены */
+  masterShift: string;
+  /** Начальник участка */
+  sectionChief: string;
+  /** Оператор */
+  operator: string;
+}
+
 export interface Order {
   id: string;
   number: string;
@@ -138,5 +147,8 @@ export interface Order {
   /** Момент нажатия «Запустить в производство» — с него идёт калькуляция факта */
   startedAt?: string;
   progress?: StepProgress[];
+  /** Ответственные по позициям заказа: ключ — id позиции */
+  assignments?: Record<string, Assignment>;
 }
+
 
