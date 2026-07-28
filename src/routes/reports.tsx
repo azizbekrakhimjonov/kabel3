@@ -290,7 +290,8 @@ function ReportsPage() {
             </section>
 
             <footer className="mt-8 grid grid-cols-3 gap-6 text-[11px]">
-              {["Технолог", "Начальник цеха", "ОТК"].map((r) => (
+              {["Технолог", "Начальник участка", "Мастер смены", "Оператор", "Начальник цеха", "ОТК"].map((r) => (
+
                 <div key={r}>
                   <div className="h-8 border-b border-foreground" />
                   <p className="mt-1 text-muted-foreground">{r}</p>
