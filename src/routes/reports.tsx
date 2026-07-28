@@ -99,7 +99,44 @@ function ReportsPage() {
         }
       >
         <div className="no-print panel mb-6 grid gap-4 p-5 md:grid-cols-4">
+          <div className="space-y-2 md:col-span-4">
+            <Label>Источник данных</Label>
+            <Select value={source} onValueChange={(v) => (v === "manual" ? setSource("manual") : applyOrder(v))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="max-h-72">
+                <SelectItem value="manual">Произвольная карта (без заказа)</SelectItem>
+                {orderOptions.map((o) => (
+                  <SelectItem key={o.key} value={o.key}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {picked && (
+            <div className="grid gap-4 md:col-span-4 md:grid-cols-3">
+              {(
+                [
+                  ["masterShift", "Мастер смены"],
+                  ["sectionChief", "Начальник участка"],
+                  ["operator", "Оператор"],
+                ] as const
+              ).map(([field, label]) => (
+                <div key={field} className="space-y-2">
+                  <Label>{label}</Label>
+                  <Input
+                    value={assignment?.[field] ?? ""}
+                    placeholder="Ф.И.О."
+                    onChange={(e) => setAssignment(picked.order.id, picked.item.id, { [field]: e.target.value })}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
           <div className="space-y-2 md:col-span-2">
+
             <Label>Продукция</Label>
             <Select value={id} onValueChange={(v) => { setId(v); setStage("full"); }}>
               <SelectTrigger>
