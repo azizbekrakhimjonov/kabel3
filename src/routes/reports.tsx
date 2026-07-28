@@ -220,6 +220,9 @@ function ReportsPage() {
                     : "Готовая продукция (полный маршрут)"
                 }
               />
+              <Field k="Мастер смены" v={assignment?.masterShift || "—"} />
+              <Field k="Начальник участка" v={assignment?.sectionChief || "—"} />
+              <Field k="Закреплённый оператор" v={assignment?.operator || "—"} />
             </section>
 
             <table className="mt-5 w-full border-collapse text-[11px]">
@@ -237,7 +240,9 @@ function ReportsPage() {
                 </tr>
               </thead>
               <tbody>
-                {calc.steps.map((s, i) => (
+                {calc.steps.map((s, i) => {
+                  const rec = progress.find((p) => p.itemId === picked?.item.id && p.stepIndex === i);
+                  return (
                   <tr key={s.processId}>
                     <td className="border border-border p-1.5 font-mono">{String(i + 1).padStart(2, "0")}</td>
                     <td className="border border-border p-1.5 font-medium">{s.processName}</td>
@@ -252,10 +257,12 @@ function ReportsPage() {
                     <td className="border border-border p-1.5 text-right tabular-nums">
                       {formatHours(s.totalHours)}
                     </td>
-                    <td className="border border-border p-1.5 h-7"></td>
-                    <td className="border border-border p-1.5 h-7"></td>
+                    <td className="border border-border p-1.5 h-7">{rec?.operator ?? ""}</td>
+                    <td className="border border-border p-1.5 h-7">{rec?.otk ?? ""}</td>
                   </tr>
-                ))}
+                  );
+                })}
+
                 <tr className="bg-muted font-semibold">
                   <td className="border border-border p-1.5" colSpan={6}>
                     Итого норма времени на партию
