@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Order, OrderItem, StepProgress } from "./types";
+import type { Assignment, Order, OrderItem, StepProgress } from "./types";
 import { PRODUCTS } from "./data/products";
 
 export interface ImportedRow {
