@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, Gauge, Thermometer, CheckCircle2, Cog, Factory } from "lucide-react";
-import { formatHours } from "@/lib/calc";
+import { formatHours, stepLengthM, stepProcessName } from "@/lib/calc";
 
 export function RouteTimeline({ product, lengthM = 1000 }: { product: Product; lengthM?: number }) {
   const route = getRouteForProduct(product.id);
@@ -28,7 +28,8 @@ export function RouteTimeline({ product, lengthM = 1000 }: { product: Product; l
         {route.steps.map((step, i) => {
           const proc = PROCESSES.find((p) => p.id === step.processId)!;
           const machine = MACHINES.find((m) => m.id === step.machineId)!;
-          const hours = lengthM / step.ratePerHour + step.setupMinutes / 60;
+          const processName = stepProcessName(step.processId, product, proc.name);
+          const hours = stepLengthM(step.processId, product, lengthM) / step.ratePerHour + step.setupMinutes / 60;
           return (
             <li key={step.processId} className="animate-rise" style={{ animationDelay: `${i * 45}ms` }}>
               <button
@@ -41,7 +42,7 @@ export function RouteTimeline({ product, lengthM = 1000 }: { product: Product; l
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-2">
-                    <span className="font-display text-base font-semibold">{proc.name}</span>
+                    <span className="font-display text-base font-semibold">{processName}</span>
                     <Badge variant="secondary" className="text-[10px]">
                       {proc.workshop}
                     </Badge>
@@ -73,7 +74,9 @@ export function RouteTimeline({ product, lengthM = 1000 }: { product: Product; l
           {activeProcess && activeMachine && active && (
             <>
               <DialogHeader>
-                <DialogTitle className="font-display text-xl uppercase">{activeProcess.name}</DialogTitle>
+                <DialogTitle className="font-display text-xl uppercase">
+                  {stepProcessName(activeProcess.id, product, activeProcess.name)}
+                </DialogTitle>
                 <DialogDescription>{activeProcess.description}</DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 sm:grid-cols-2">

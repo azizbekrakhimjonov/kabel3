@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Assignment, Order, OrderItem, StepProgress } from "./types";
+import type { Assignment, Employee, EmployeeRole, Order, OrderItem, StepProgress } from "./types";
 import { PRODUCTS } from "./data/products";
 
 export interface ImportedRow {
@@ -39,11 +39,17 @@ interface AppState {
     entry: Omit<StepProgress, "startedAt" | "finishedAt"> & { startedAt?: string },
   ) => void;
   undoStep: (id: string, itemId: string, stepIndex: number) => void;
+  markStepStart: (id: string, itemId: string, stepIndex: number) => void;
   setAssignment: (orderId: string, itemId: string, patch: Partial<Assignment>) => void;
+  setStepAssignment: (orderId: string, itemId: string, processId: string, patch: Partial<Assignment>) => void;
 
   removeOrder: (id: string) => void;
   imported: ImportedRow[];
   setImported: (rows: ImportedRow[]) => void;
+
+  employees: Employee[];
+  addEmployee: (name: string, role: EmployeeRole) => void;
+  removeEmployee: (id: string) => void;
 }
 
 const AppContext = createContext<AppState | null>(null);
@@ -84,6 +90,18 @@ const SEED_ORDERS: Order[] = [
     comment: "Требуется протокол испытаний на нераспространение горения.",
     items: seedItems([[PRODUCTS[0]?.id ?? "prd-001", 2500]]),
   },
+];
+
+const SEED_EMPLOYEES: Employee[] = [
+  { id: "emp-1", name: "Баходир Каримов", role: "Мастер смены" },
+  { id: "emp-2", name: "Улуғбек Сафаров", role: "Мастер смены" },
+  { id: "emp-3", name: "Жавлон Тошев", role: "Нач. участка" },
+  { id: "emp-4", name: "Дилшод Норов", role: "Нач. участка" },
+  { id: "emp-5", name: "Азизбек Юсупов", role: "Оператор" },
+  { id: "emp-6", name: "Одил Раҳимов", role: "Оператор" },
+  { id: "emp-7", name: "Жамшид Эргашев", role: "Оператор" },
+  { id: "emp-8", name: "И. Абдуллаев", role: "Контролёр ОТК" },
+  { id: "emp-9", name: "М. Юлдашева", role: "Контролёр ОТК" },
 ];
 
 function usePersisted<T>(key: string, initial: T) {
@@ -130,6 +148,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
   const [orders, setOrders] = usePersisted<Order[]>("ctms.orders", SEED_ORDERS);
   const [imported, setImported] = usePersisted<ImportedRow[]>("ctms.imported", []);
+  const [employees, setEmployees] = usePersisted<Employee[]>("ctms.employees", SEED_EMPLOYEES);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -183,29 +202,57 @@ export function AppProvider({ children }: { children: ReactNode }) {
               .filter((p) => p.itemId === entry.itemId)
               .sort((a, b) => a.stepIndex - b.stepIndex)
               .at(-1);
-            const startedAt = entry.startedAt ?? last?.finishedAt ?? x.startedAt ?? new Date().toISOString();
+            const startedAt =
+              entry.startedAt ?? x.stepStarts?.[entry.itemId]?.[entry.stepIndex] ?? last?.finishedAt ?? x.startedAt ?? new Date().toISOString();
             const record: StepProgress = {
               itemId: entry.itemId,
               stepIndex: entry.stepIndex,
               operator: entry.operator,
               otk: entry.otk,
+              masterShift: entry.masterShift,
+              sectionChief: entry.sectionChief,
               note: entry.note,
               startedAt,
               finishedAt: new Date().toISOString(),
             };
+            const itemStarts = { ...(x.stepStarts?.[entry.itemId] ?? {}) };
+            delete itemStarts[entry.stepIndex];
             return {
               ...x,
               progress: [...prev.filter((p) => !(p.itemId === entry.itemId && p.stepIndex === entry.stepIndex)), record],
+              stepStarts: { ...(x.stepStarts ?? {}), [entry.itemId]: itemStarts },
             };
           }),
         ),
-      undoStep: (id, itemId, stepIndex) =>
+      markStepStart: (id, itemId, stepIndex) =>
         setOrders((o) =>
           o.map((x) =>
             x.id === id
-              ? { ...x, progress: (x.progress ?? []).filter((p) => !(p.itemId === itemId && p.stepIndex >= stepIndex)) }
+              ? {
+                  ...x,
+                  stepStarts: {
+                    ...(x.stepStarts ?? {}),
+                    [itemId]: {
+                      ...(x.stepStarts?.[itemId] ?? {}),
+                      [stepIndex]: x.stepStarts?.[itemId]?.[stepIndex] ?? new Date().toISOString(),
+                    },
+                  },
+                }
               : x,
           ),
+        ),
+      undoStep: (id, itemId, stepIndex) =>
+        setOrders((o) =>
+          o.map((x) => {
+            if (x.id !== id) return x;
+            const itemStarts = { ...(x.stepStarts?.[itemId] ?? {}) };
+            for (const key of Object.keys(itemStarts)) if (Number(key) >= stepIndex) delete itemStarts[Number(key)];
+            return {
+              ...x,
+              progress: (x.progress ?? []).filter((p) => !(p.itemId === itemId && p.stepIndex >= stepIndex)),
+              stepStarts: { ...(x.stepStarts ?? {}), [itemId]: itemStarts },
+            };
+          }),
         ),
       setAssignment: (orderId, itemId, patch) =>
         setOrders((o) =>
@@ -227,12 +274,57 @@ export function AppProvider({ children }: { children: ReactNode }) {
               : x,
           ),
         ),
+      setStepAssignment: (orderId, itemId, processId, patch) =>
+        setOrders((o) =>
+          o.map((x) =>
+            x.id === orderId
+              ? {
+                  ...x,
+                  stepAssignments: {
+                    ...(x.stepAssignments ?? {}),
+                    [itemId]: {
+                      ...(x.stepAssignments?.[itemId] ?? {}),
+                      [processId]: {
+                        masterShift: "",
+                        sectionChief: "",
+                        operator: "",
+                        ...(x.stepAssignments?.[itemId]?.[processId] ?? {}),
+                        ...patch,
+                      },
+                    },
+                  },
+                }
+              : x,
+          ),
+        ),
 
       removeOrder: (id) => setOrders((o) => o.filter((x) => x.id !== id)),
       imported,
       setImported,
+
+      employees,
+      addEmployee: (name, role) =>
+        setEmployees((e) => [...e, { id: `emp-${Date.now()}`, name: name.trim(), role }]),
+      removeEmployee: (id) => setEmployees((e) => e.filter((x) => x.id !== id)),
     }),
-    [authed, user, theme, favorites, recent, orders, imported, setAuthed, setUser, setTheme, setFavorites, setRecent, setOrders, setImported],
+    [
+      authed,
+      user,
+      theme,
+      favorites,
+      recent,
+      orders,
+      imported,
+      employees,
+      setAuthed,
+      setUser,
+      setTheme,
+      setFavorites,
+      setRecent,
+      setOrders,
+      setImported,
+      setEmployees,
+    ],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

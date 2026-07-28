@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   LayoutDashboard,
   Search,
@@ -18,8 +18,12 @@ import {
   LogOut,
   Factory,
   Table2,
+  CalendarDays,
+  Users,
 
 } from "lucide-react";
+import { buildPlanRows, PLAN_COLUMNS } from "@/lib/plan";
+import { currentShift, durationShort } from "@/lib/shift";
 import {
   Sidebar,
   SidebarContent,
@@ -43,6 +47,8 @@ const NAV = [
   { title: "Продукция", url: "/products", icon: Package },
   { title: "Заказы", url: "/orders", icon: ClipboardList },
   { title: "План-задание", url: "/plan", icon: Table2 },
+  { title: "Календарь", url: "/calendar", icon: CalendarDays },
+  { title: "Сотрудники", url: "/staff", icon: Users },
 
   { title: "Маршруты", url: "/routes", icon: GitBranch },
   { title: "Оборудование", url: "/machines", icon: Cog },
@@ -53,6 +59,40 @@ const NAV = [
   { title: "Схема завода", url: "/layout", icon: Factory },
   { title: "Настройки", url: "/settings", icon: Settings },
 ];
+
+function useTick(intervalMs: number) {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick((v) => v + 1), intervalMs);
+    return () => clearInterval(t);
+  }, [intervalMs]);
+}
+
+function ShiftFooter() {
+  const { orders } = useApp();
+  useTick(1000);
+  const shift = currentShift();
+  const activeWorkshops = useMemo(() => {
+    const rows = buildPlanRows(orders);
+    const workshops = new Set<string>();
+    for (const row of rows) {
+      for (const col of PLAN_COLUMNS) {
+        if (row.cells[col.id]?.state === "current") workshops.add(col.workshop);
+      }
+    }
+    return workshops.size;
+  }, [orders]);
+
+  return (
+    <div className="rounded-md bg-sidebar-accent p-3 text-[11px] leading-relaxed text-sidebar-accent-foreground/80">
+      Смена {shift.number} · Цехов в работе: {activeWorkshops}
+      <br />
+      До конца смены: {durationShort(shift.remainingMs)}
+      <br />
+      Версия MES 1.4.0
+    </div>
+  );
+}
 
 function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -90,11 +130,7 @@ function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="group-data-[collapsible=icon]:hidden">
-        <div className="rounded-md bg-sidebar-accent p-3 text-[11px] leading-relaxed text-sidebar-accent-foreground/80">
-          Смена: 2 · Цехов в работе: 5
-          <br />
-          Версия MES 1.4.0
-        </div>
+        <ShiftFooter />
       </SidebarFooter>
     </Sidebar>
   );

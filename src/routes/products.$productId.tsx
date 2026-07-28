@@ -6,7 +6,7 @@ import { RouteTimeline } from "@/components/RouteTimeline";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PRODUCTS } from "@/lib/data/products";
-import { calcItem, formatNum, formatSum } from "@/lib/calc";
+import { calcItem, formatNum } from "@/lib/calc";
 import { ClipboardList, Printer, ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/products/$productId")({
@@ -73,7 +73,6 @@ function ProductDetailPage() {
                 ["Стальная лента", `${formatNum(calc.armorKg, 1)} кг`],
                 ["Барабанов", `${calc.drums} шт по ${calc.drumLength} м`],
                 ["Время производства", `${formatNum(calc.productionHours, 1)} ч`],
-                ["Материалы", formatSum(calc.materialCost)],
               ].map(([l, v]) => (
                 <div key={l} className="panel p-4">
                   <p className="text-[11px] uppercase tracking-widest text-muted-foreground">{l}</p>

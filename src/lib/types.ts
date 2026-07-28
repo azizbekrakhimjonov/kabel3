@@ -121,6 +121,10 @@ export interface StepProgress {
   finishedAt: string;
   operator: string;
   otk: string;
+  /** Мастер смены, фактически принявший операцию */
+  masterShift: string;
+  /** Начальник участка, фактически принявший операцию */
+  sectionChief: string;
   note?: string;
 }
 
@@ -132,6 +136,16 @@ export interface Assignment {
   /** Оператор */
   operator: string;
 }
+
+export type EmployeeRole = "Мастер смены" | "Нач. участка" | "Оператор" | "Контролёр ОТК";
+
+export interface Employee {
+  id: string;
+  name: string;
+  role: EmployeeRole;
+}
+
+export const EMPLOYEE_ROLES: EmployeeRole[] = ["Мастер смены", "Нач. участка", "Оператор", "Контролёр ОТК"];
 
 export interface Order {
   id: string;
@@ -149,6 +163,10 @@ export interface Order {
   progress?: StepProgress[];
   /** Ответственные по позициям заказа: ключ — id позиции */
   assignments?: Record<string, Assignment>;
+  /** Ответственные по каждому переделу: ключ — id позиции, вложенный ключ — id передела */
+  stepAssignments?: Record<string, Record<string, Assignment>>;
+  /** Фактический момент поступления партии на передел (кнопка «Начать операцию»): itemId → stepIndex → ISO */
+  stepStarts?: Record<string, Record<number, string>>;
 }
 
 

@@ -3,11 +3,11 @@ import type { Order } from "@/lib/types";
 import { calcOrder, formatHours, formatNum } from "@/lib/calc";
 import { useApp } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { NameSelect } from "@/components/NameSelect";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, Circle, Loader2, RotateCcw, ShieldCheck, User } from "lucide-react";
+import { CheckCircle2, Circle, ClipboardCheck, Loader2, PackageCheck, RotateCcw, ShieldCheck, User, Users } from "lucide-react";
 import { toast } from "sonner";
 
 const fmtClock = (iso: string) =>
@@ -36,13 +36,15 @@ const durationText = (ms: number) => {
 };
 
 export function ProductionTracker({ order }: { order: Order }) {
-  const { completeStep, undoStep, updateOrderStatus, user } = useApp();
+  const { completeStep, undoStep, markStepStart, updateOrderStatus } = useApp();
   const calc = calcOrder(order);
   const progress = order.progress ?? [];
   useTicker(order.status === "в производстве");
 
-  const [operator, setOperator] = useState(user);
+  const [operator, setOperator] = useState("");
   const [otk, setOtk] = useState("И. Абдуллаев");
+  const [masterShift, setMasterShift] = useState("");
+  const [sectionChief, setSectionChief] = useState("");
 
   const allDone = calc.items.every(
     (it) => progress.filter((p) => p.itemId === it.item.id).length >= it.steps.length,
@@ -66,18 +68,30 @@ export function ProductionTracker({ order }: { order: Order }) {
         )}
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="space-y-1.5">
+          <Label className="text-[11px] uppercase tracking-widest text-muted-foreground">
+            <Users className="mr-1 inline size-3" /> Мастер смены
+          </Label>
+          <NameSelect role="Мастер смены" value={masterShift} onChange={setMasterShift} className="h-8" />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-[11px] uppercase tracking-widest text-muted-foreground">
+            <ClipboardCheck className="mr-1 inline size-3" /> Нач. участка
+          </Label>
+          <NameSelect role="Нач. участка" value={sectionChief} onChange={setSectionChief} className="h-8" />
+        </div>
         <div className="space-y-1.5">
           <Label className="text-[11px] uppercase tracking-widest text-muted-foreground">
             <User className="mr-1 inline size-3" /> Оператор
           </Label>
-          <Input value={operator} onChange={(e) => setOperator(e.target.value)} className="h-8" />
+          <NameSelect role="Оператор" value={operator} onChange={setOperator} className="h-8" />
         </div>
         <div className="space-y-1.5">
           <Label className="text-[11px] uppercase tracking-widest text-muted-foreground">
             <ShieldCheck className="mr-1 inline size-3" /> Контролёр ОТК
           </Label>
-          <Input value={otk} onChange={(e) => setOtk(e.target.value)} className="h-8" />
+          <NameSelect role="Контролёр ОТК" value={otk} onChange={setOtk} className="h-8" />
         </div>
       </div>
 
@@ -103,7 +117,7 @@ export function ProductionTracker({ order }: { order: Order }) {
                 {formatNum(it.lengthM)} м
               </Badge>
               <Badge variant="outline" className="text-[10px]">
-                {it.readiness}
+                {it.isSemi ? `п/ф до «${it.stageName}»` : "готовая продукция"}
               </Badge>
               <span className="ml-auto font-mono text-xs text-muted-foreground">
                 {doneCount}/{it.steps.length} операций
@@ -118,6 +132,8 @@ export function ProductionTracker({ order }: { order: Order }) {
               {it.steps.map((s, i) => {
                 const rec = itemProgress.find((p) => p.stepIndex === i);
                 const isCurrent = i === currentIndex;
+                const arrivedIso = isCurrent ? order.stepStarts?.[it.item.id]?.[i] : undefined;
+                const idleMs = arrivedIso ? new Date(arrivedIso).getTime() - new Date(currentStartIso).getTime() : 0;
                 return (
                   <li
                     key={s.processId}
@@ -149,6 +165,8 @@ export function ProductionTracker({ order }: { order: Order }) {
 
                     {rec && (
                       <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 pl-6 text-[11px] text-muted-foreground">
+                        <span>Мастер смены: {rec.masterShift || "—"}</span>
+                        <span>Нач. участка: {rec.sectionChief || "—"}</span>
                         <span>Оператор: {rec.operator}</span>
                         <span>ОТК: {rec.otk}</span>
                         <span>Завершено: {fmtClock(rec.finishedAt)}</span>
@@ -166,33 +184,82 @@ export function ProductionTracker({ order }: { order: Order }) {
                       </div>
                     )}
 
-                    {isCurrent && (
+                    {isCurrent && (() => {
+                      const plan = order.stepAssignments?.[it.item.id]?.[s.processId];
+                      return (
                       <div className="mt-2 flex flex-wrap items-center gap-3 pl-6">
-                        <span className="font-mono text-[11px] text-accent">
-                          идёт {durationText(Date.now() - new Date(currentStartIso).getTime())}
-                        </span>
-                        <Button
-                          size="sm"
-                          className="h-7"
-                          onClick={() => {
-                            if (!operator.trim() || !otk.trim()) {
-                              toast.error("Укажите оператора и контролёра ОТК");
-                              return;
-                            }
-                            completeStep(order.id, {
-                              itemId: it.item.id,
-                              stepIndex: i,
-                              operator,
-                              otk,
-                              startedAt: currentStartIso,
-                            });
-                            toast.success(`${s.processName} — операция завершена, принята ОТК`);
-                          }}
-                        >
-                          <CheckCircle2 className="size-3.5" /> Завершить операцию
-                        </Button>
+                        {arrivedIso ? (
+                          <>
+                            <span className="font-mono text-[11px] text-accent">
+                              вход {fmtClock(arrivedIso)} · идёт {durationText(Date.now() - new Date(arrivedIso).getTime())}
+                            </span>
+                            {idleMs > 0 && (
+                              <span className="font-mono text-[11px] font-semibold text-warning">
+                                простой перед: {durationText(idleMs)}
+                              </span>
+                            )}
+                            {plan && (plan.masterShift || plan.sectionChief || plan.operator) && (
+                              <span className="text-[11px] text-muted-foreground">
+                                план: {plan.masterShift || "—"} / {plan.sectionChief || "—"} / {plan.operator || "—"}
+                                {" · "}
+                                <button
+                                  type="button"
+                                  className="underline underline-offset-2 hover:text-accent"
+                                  onClick={() => {
+                                    if (plan.masterShift) setMasterShift(plan.masterShift);
+                                    if (plan.sectionChief) setSectionChief(plan.sectionChief);
+                                    if (plan.operator) setOperator(plan.operator);
+                                  }}
+                                >
+                                  заполнить по плану
+                                </button>
+                              </span>
+                            )}
+                            <Button
+                              size="sm"
+                              className="h-7"
+                              onClick={() => {
+                                if (!masterShift.trim() || !sectionChief.trim() || !operator.trim() || !otk.trim()) {
+                                  toast.error("Укажите мастера смены, нач. участка, оператора и контролёра ОТК");
+                                  return;
+                                }
+                                completeStep(order.id, {
+                                  itemId: it.item.id,
+                                  stepIndex: i,
+                                  operator,
+                                  otk,
+                                  masterShift,
+                                  sectionChief,
+                                  startedAt: arrivedIso,
+                                });
+                                setMasterShift("");
+                                setSectionChief("");
+                                setOperator("");
+                                setOtk("");
+                                toast.success(`${s.processName} — операция завершена, принята ОТК`);
+                              }}
+                            >
+                              <CheckCircle2 className="size-3.5" /> Завершить операцию
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <span className="font-mono text-[11px] font-semibold text-warning">
+                              в очереди {durationText(Date.now() - new Date(currentStartIso).getTime())}
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7"
+                              onClick={() => markStepStart(order.id, it.item.id, i)}
+                            >
+                              <PackageCheck className="size-3.5" /> Материал поступил
+                            </Button>
+                          </>
+                        )}
                       </div>
-                    )}
+                      );
+                    })()}
                   </li>
                 );
               })}

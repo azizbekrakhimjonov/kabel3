@@ -5,9 +5,10 @@ import { Protected } from "@/components/layout/Protected";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NameSelect } from "@/components/NameSelect";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PRODUCTS } from "@/lib/data/products";
-import { buildSteps, calcItem, formatHours, formatNum, formatSum } from "@/lib/calc";
+import { buildSteps, calcItem, formatHours, formatNum } from "@/lib/calc";
 import { useApp } from "@/lib/store";
 import { Printer } from "lucide-react";
 
@@ -119,17 +120,17 @@ function ReportsPage() {
             <div className="grid gap-4 md:col-span-4 md:grid-cols-3">
               {(
                 [
-                  ["masterShift", "Мастер смены"],
-                  ["sectionChief", "Начальник участка"],
-                  ["operator", "Оператор"],
+                  ["masterShift", "Мастер смены", "Мастер смены" as const],
+                  ["sectionChief", "Начальник участка", "Нач. участка" as const],
+                  ["operator", "Оператор", "Оператор" as const],
                 ] as const
-              ).map(([field, label]) => (
+              ).map(([field, label, role]) => (
                 <div key={field} className="space-y-2">
                   <Label>{label}</Label>
-                  <Input
+                  <NameSelect
+                    role={role}
                     value={assignment?.[field] ?? ""}
-                    placeholder="Ф.И.О."
-                    onChange={(e) => setAssignment(picked.order.id, picked.item.id, { [field]: e.target.value })}
+                    onChange={(name) => setAssignment(picked.order.id, picked.item.id, { [field]: name })}
                   />
                 </div>
               ))}
@@ -211,7 +212,6 @@ function ReportsPage() {
               <Field k="Наружный диаметр" v={`${product.outerDiameter} мм`} />
               <Field k="Тара" v={`${calc.drums} барабан(ов) по ${calc.drumLength} м`} />
               <Field k="Норма времени" v={formatHours(calc.productionHours)} />
-              <Field k="Стоимость партии" v={formatSum(calc.price)} />
               <Field
                 k="Вид выпуска"
                 v={
@@ -237,11 +237,25 @@ function ReportsPage() {
                   <th className="border border-border p-1.5 text-right">Т операции</th>
                   <th className="border border-border p-1.5 text-left">Оператор</th>
                   <th className="border border-border p-1.5 text-left">ОТК</th>
+                  <th className="border border-border p-1.5 text-left">Вход</th>
+                  <th className="border border-border p-1.5 text-left">Выход</th>
+                  <th className="border border-border p-1.5 text-right">Простой</th>
+                  <th className="border border-border p-1.5 text-right">Факт</th>
                 </tr>
               </thead>
               <tbody>
                 {calc.steps.map((s, i) => {
                   const rec = progress.find((p) => p.itemId === picked?.item.id && p.stepIndex === i);
+                  const prevRec = i > 0 ? progress.find((p) => p.itemId === picked?.item.id && p.stepIndex === i - 1) : undefined;
+                  const prevFinishedAt = i === 0 ? picked?.order.startedAt : prevRec?.finishedAt;
+                  const arrived = rec?.startedAt ?? (picked ? picked.order.stepStarts?.[picked.item.id]?.[i] : undefined);
+                  const idleHours =
+                    arrived && prevFinishedAt
+                      ? Math.max(0, (new Date(arrived).getTime() - new Date(prevFinishedAt).getTime()) / 3_600_000)
+                      : undefined;
+                  const factHours = rec
+                    ? (new Date(rec.finishedAt).getTime() - new Date(rec.startedAt).getTime()) / 3_600_000
+                    : undefined;
                   return (
                   <tr key={s.processId}>
                     <td className="border border-border p-1.5 font-mono">{String(i + 1).padStart(2, "0")}</td>
@@ -259,6 +273,18 @@ function ReportsPage() {
                     </td>
                     <td className="border border-border p-1.5 h-7">{rec?.operator ?? ""}</td>
                     <td className="border border-border p-1.5 h-7">{rec?.otk ?? ""}</td>
+                    <td className="border border-border p-1.5 h-7 whitespace-nowrap">
+                      {arrived ? new Date(arrived).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}
+                    </td>
+                    <td className="border border-border p-1.5 h-7 whitespace-nowrap">
+                      {rec ? new Date(rec.finishedAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}
+                    </td>
+                    <td className={`border border-border p-1.5 text-right tabular-nums ${idleHours && idleHours > 0.02 ? "font-semibold text-warning" : ""}`}>
+                      {idleHours !== undefined && idleHours > 0.02 ? formatHours(Math.round(idleHours * 100) / 100) : ""}
+                    </td>
+                    <td className="border border-border p-1.5 text-right tabular-nums">
+                      {factHours !== undefined ? formatHours(Math.round(factHours * 100) / 100) : ""}
+                    </td>
                   </tr>
                   );
                 })}
@@ -270,6 +296,10 @@ function ReportsPage() {
                   <td className="border border-border p-1.5 text-right tabular-nums">
                     {formatHours(calc.productionHours)}
                   </td>
+                  <td className="border border-border p-1.5"></td>
+                  <td className="border border-border p-1.5"></td>
+                  <td className="border border-border p-1.5"></td>
+                  <td className="border border-border p-1.5"></td>
                   <td className="border border-border p-1.5"></td>
                   <td className="border border-border p-1.5"></td>
                 </tr>
@@ -284,7 +314,6 @@ function ReportsPage() {
                   <MatRow k="Изоляция и оболочка (ПВХ/СПЭ)" v={`${formatNum(calc.pvcKg, 1)} кг`} />
                   <MatRow k="Экран" v={`${formatNum(calc.screenKg, 1)} кг`} />
                   <MatRow k="Броня" v={`${formatNum(calc.armorKg, 1)} кг`} />
-                  <MatRow k="Стоимость материалов" v={formatSum(calc.materialCost)} />
                 </tbody>
               </table>
             </section>

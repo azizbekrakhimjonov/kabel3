@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PRODUCTS, CABLE_MODELS } from "@/lib/data/products";
-import { formatNum, formatSum } from "@/lib/calc";
+import { formatNum } from "@/lib/calc";
 import { Star, Search } from "lucide-react";
 import { useApp } from "@/lib/store";
 
@@ -89,7 +89,6 @@ function ProductsPage() {
                 <TableHead className="text-right">Ø, мм</TableHead>
                 <TableHead className="text-right">Масса, кг/км</TableHead>
                 <TableHead>Стандарт</TableHead>
-                <TableHead className="text-right">Цена, м</TableHead>
                 <TableHead></TableHead>
               </TableRow>
             </TableHeader>
@@ -111,7 +110,6 @@ function ProductsPage() {
                   <TableCell className="text-right tabular-nums">{formatNum(p.outerDiameter, 1)}</TableCell>
                   <TableCell className="text-right tabular-nums">{formatNum(p.weightKgPerKm)}</TableCell>
                   <TableCell className="text-xs">{p.gost}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatSum(p.pricePerM)}</TableCell>
                   <TableCell className="text-right">
                     <Button asChild size="sm" variant="ghost">
                       <Link to="/products/$productId" params={{ productId: p.id }}>

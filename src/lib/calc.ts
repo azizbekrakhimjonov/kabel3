@@ -58,15 +58,29 @@ export interface OrderCalc {
 const SHIFT_HOURS = 8;
 const SHIFTS_PER_DAY = 2;
 
+/** Переделы, где каждая жила обрабатывается отдельно (до скрутки изолированных жил в кабель) —
+ * на эти переделы уходит cores × метраж провода, а не метраж готового кабеля. */
+export const PER_CORE_STAGES = new Set(["p-rod", "p-drawing", "p-annealing", "p-bunching", "p-insulation", "p-spark"]);
+
+export function stepLengthM(processId: string, product: Product, lengthM: number) {
+  return PER_CORE_STAGES.has(processId) ? lengthM * product.cores : lengthM;
+}
+
+export function stepProcessName(processId: string, product: Product, fallbackName: string) {
+  if (processId !== "p-rod") return fallbackName;
+  return product.conductorMaterial === "Алюминий" ? "Алюминиевая катанка" : "Медная катанка";
+}
+
 export function buildSteps(product: Product, lengthM: number): StepCalc[] {
   const route = ROUTES.find((r) => r.productId === product.id)!;
   return route.steps.map((s) => {
     const proc = PROCESSES.find((p) => p.id === s.processId)!;
     const machine = MACHINES.find((m) => m.id === s.machineId)!;
-    const runHours = lengthM / s.ratePerHour;
+    const runHours = stepLengthM(s.processId, product, lengthM) / s.ratePerHour;
+    const processName = stepProcessName(s.processId, product, proc.name);
     return {
       processId: s.processId,
-      processName: proc.name,
+      processName,
       workshop: proc.workshop,
       machineName: machine.name,
       machineCode: machine.code,

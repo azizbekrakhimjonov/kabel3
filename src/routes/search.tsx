@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PRODUCTS, CABLE_MODELS } from "@/lib/data/products";
 import { STANDARDS } from "@/lib/data/catalog";
 import { useApp } from "@/lib/store";
-import { calcItem, formatNum, formatSum } from "@/lib/calc";
+import { calcItem, formatNum } from "@/lib/calc";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/search")({
@@ -217,8 +217,6 @@ function SearchPage() {
                   <Cell label="Время производства" value={`${formatNum(calc.productionHours, 1)} ч`} />
                   <Cell label="Экран" value={`${formatNum(calc.screenKg, 1)} кг`} />
                   <Cell label="Броня" value={`${formatNum(calc.armorKg, 1)} кг`} />
-                  <Cell label="Себестоимость материалов" value={formatSum(calc.materialCost)} />
-                  <Cell label="Отпускная стоимость" value={formatSum(calc.price)} />
                 </div>
               </TabsContent>
               <TabsContent value="std" className="mt-4">

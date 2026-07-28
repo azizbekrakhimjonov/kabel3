@@ -21,7 +21,7 @@ import { Progress } from "@/components/ui/progress";
 import { PRODUCTS, ROUTES } from "@/lib/data/products";
 import { MACHINES, STANDARDS, WORKSHOPS } from "@/lib/data/catalog";
 import { useApp } from "@/lib/store";
-import { calcOrder, formatNum, formatSum } from "@/lib/calc";
+import { calcOrder, formatNum } from "@/lib/calc";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -114,10 +114,9 @@ function DashboardPage() {
                 );
               })}
             </div>
-            <div className="mt-5 grid gap-3 border-t border-border pt-4 sm:grid-cols-3">
+            <div className="mt-5 grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
               <Metric label="Метраж в заказах" value={`${formatNum(load.totalLength)} м`} />
               <Metric label="Расчётная масса" value={`${formatNum(load.totalWeight)} кг`} />
-              <Metric label="Стоимость" value={formatSum(load.totalPrice)} />
             </div>
           </div>
 

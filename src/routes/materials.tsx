@@ -3,8 +3,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { Protected } from "@/components/layout/Protected";
 import { Badge } from "@/components/ui/badge";
 import { MATERIALS } from "@/lib/data/catalog";
-import { formatSum } from "@/lib/calc";
-import { Boxes, Truck, Scale } from "lucide-react";
+import { Truck, Scale } from "lucide-react";
 
 export const Route = createFileRoute("/materials")({
   head: () => ({
@@ -49,12 +48,6 @@ function MaterialsPage() {
                     <Scale className="size-3" /> Плотность
                   </dt>
                   <dd className="font-mono font-medium">{m.density} г/см³</dd>
-                </div>
-                <div className="flex items-center justify-between gap-2">
-                  <dt className="inline-flex items-center gap-1 text-muted-foreground">
-                    <Boxes className="size-3" /> Цена
-                  </dt>
-                  <dd className="font-mono font-medium">{formatSum(m.pricePerKg)}/кг</dd>
                 </div>
                 <div className="flex items-start justify-between gap-2">
                   <dt className="inline-flex shrink-0 items-center gap-1 text-muted-foreground">

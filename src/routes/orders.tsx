@@ -12,11 +12,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { PRODUCTS, CABLE_MODELS } from "@/lib/data/products";
-import { buildSteps, calcOrder, formatHours, formatNum, formatSum } from "@/lib/calc";
+import { buildSteps, calcOrder, formatHours, formatNum } from "@/lib/calc";
 import { ProductionTracker } from "@/components/ProductionTracker";
 import { useApp } from "@/lib/store";
 import type { Order, OrderItem } from "@/lib/types";
-import { Plus, Trash2, ClipboardList, Timer, Weight, Coins, Printer, Layers, Play } from "lucide-react";
+import { Plus, Trash2, ClipboardList, Timer, Weight, Printer, Layers, Play } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/orders")({
@@ -263,7 +263,6 @@ function OrdersPage() {
                         <TableHead className="text-right">Масса, кг</TableHead>
                         <TableHead className="text-right">Барабаны</TableHead>
                         <TableHead className="text-right">Время</TableHead>
-                        <TableHead className="text-right">Стоимость</TableHead>
                         <TableHead></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -279,7 +278,7 @@ function OrdersPage() {
                               variant="outline"
                               className={it.isSemi ? "border-warning/40 bg-warning/10 text-warning" : ""}
                             >
-                              {it.isSemi ? `п/ф до «${it.stageName}»` : "готовая"}
+                              {it.isSemi ? `П/Ф до «${it.stageName}»` : "ГП"}
                             </Badge>
                             <p className="mt-1 font-mono text-[10px] text-muted-foreground">
                               {it.stageTo}/{it.allSteps.length} переходов
@@ -293,7 +292,6 @@ function OrdersPage() {
                           <TableCell className="text-right tabular-nums">
                             {formatHours(it.productionHours)}
                           </TableCell>
-                          <TableCell className="text-right tabular-nums">{formatSum(it.price)}</TableCell>
                           <TableCell className="text-right">
                             <Button
                               variant="ghost"
@@ -307,7 +305,7 @@ function OrdersPage() {
                       ))}
                       {calc.items.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
+                          <TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
                             Позиции ещё не добавлены
                           </TableCell>
                         </TableRow>
@@ -331,8 +329,6 @@ function OrdersPage() {
                     <Row icon={Timer} k="Смен (8 ч)" v={`${calc.totalShifts}`} />
                     <Row icon={Timer} k="Календарных дней" v={`${calc.totalDays}`} />
                     <Row icon={Timer} k="Плановый выпуск" v={calc.finishDate} />
-                    <Row icon={Coins} k="Материалы" v={formatSum(calc.totalMaterialCost)} />
-                    <Row icon={Coins} k="Сумма заказа" v={formatSum(calc.totalPrice)} />
                   </dl>
                 </div>
 
@@ -475,10 +471,9 @@ function OrdersPage() {
                         </li>
                       ))}
                     </ul>
-                    <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
                       <Mini label="Масса" value={`${formatNum(c.totalWeight)} кг`} />
                       <Mini label="Время" value={`${formatNum(c.totalHours, 1)} ч`} />
-                      <Mini label="Сумма" value={formatSum(c.totalPrice)} />
                     </div>
                     {o.comment && <p className="mt-3 text-xs text-muted-foreground">{o.comment}</p>}
                     <div className="mt-4 flex flex-wrap gap-2">
