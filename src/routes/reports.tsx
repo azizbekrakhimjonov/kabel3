@@ -8,7 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PRODUCTS } from "@/lib/data/products";
 import { buildSteps, calcItem, formatHours, formatNum, formatSum } from "@/lib/calc";
+import { useApp } from "@/lib/store";
 import { Printer } from "lucide-react";
+
 
 export const Route = createFileRoute("/reports")({
   validateSearch: (s: Record<string, unknown>) => ({
